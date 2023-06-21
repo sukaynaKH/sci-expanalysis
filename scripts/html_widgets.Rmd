@@ -1,0 +1,215 @@
+---
+title: "trust_in_science.Rmd"
+author: "Sukayna"
+date: "2023-01-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FALSE)
+```
+
+# How does science education and trust vary by regime type?
+
+Data from Wellcome Global Monitor 2018 & 2020; V-Dem Country-Year v12 (2021)
+
+These widgets are interactive: hover over the bubble plots for country-level information!
+
+```{r echo=FALSE, results='hide'}
+# how science education and trust vary by regime type
+
+library(plotly)
+library(viridis)
+library(dplyr)
+library(ggplot2)
+
+# load data
+dat2018 <- read.csv('data/cleaned_dat2018.csv', header = T)
+dat2020 <- read.csv('data/cleaned_dat2020.csv', header = T)
+
+
+# Most basic bubble plot
+dat18 <- dat2018 %>%
+  group_by(country) %>%
+  mutate(
+    educm = mean(educ, na.rm = TRUE),
+    scieducm = mean(scieduc, na.rm = TRUE),
+    trust_indexmcon = mean(trust_index_cond, na.rm = TRUE),
+    trust_indexm = mean(trust_index, na.rm = TRUE),
+    regionsm = ifelse(
+      grepl("Europe", regions),
+      "Europe",
+      ifelse(
+        grepl("Africa", regions),
+        "Africa",
+        ifelse(
+          grepl("Asia", regions),
+          "Asia",
+          ifelse(
+            grepl("Central America", regions),
+            "Central/South America",
+            ifelse(
+              grepl("South America", regions),
+              "Central/South America",
+              as.character(regions)
+            )
+          )
+        )
+      )
+    )
+  ) %>%
+  select(country,
+         scieducm,
+         trust_indexm,
+         trust_indexmcon,
+         elecdem,
+         elecdem_fct,
+         regions,
+         regionsm) %>%
+  distinct() %>%
+  arrange(desc(elecdem)) %>% 
+  mutate(
+    text = paste(
+      "Country: ",
+      country,
+      "\nRegion: ",
+      regions,
+      "\nElectoral Democracy Index: ",
+      elecdem,
+      "\nTrust in Scientists (mean): ",
+      round(trust_indexmcon,2),
+      "\nScience Education Level (mean): ",
+      round(scieducm,2),
+      sep = ""
+    )
+  )
+
+p1 <- dat18 %>%
+  filter(regions != "Not assigned") %>%
+  #arrange(desc(elecdem)) %>% 
+  ggplot(aes(
+    x = scieducm,
+    y = trust_indexmcon,
+    size = desc(elecdem),
+    color = elecdem_fct
+  )) +
+  geom_point(aes(text=text), alpha = 0.6) +
+  scale_size(range = c(9, 0.1), name = "electoral democracy index") +
+  scale_color_viridis_d(
+    name = "",
+    option = "magma",
+    begin = 0.01,
+    end = 0.75,
+    direction = -1
+  ) +
+  theme_minimal() +
+  labs(title="How do trust level and science education vary by regime type in 2018?") +
+  theme(legend.position = "right") +
+  scale_y_continuous(name = "mean trust in scientists (restricted index)") +
+  scale_x_continuous(name = "mean level of science education")
+
+```
+
+## 2018 data
+
+```{r echo=FALSE, warning=FALSE, results='markup'}
+
+# turn ggplot interactive with plot
+pp1 <- ggplotly(p1, tooltip = "text")
+pp1
+```
+
+```{r echo=FALSE, results='hide'}
+
+# 2020 data
+dat20 <- dat2020 %>%
+  group_by(country) %>%
+  mutate(
+    educm = mean(educ, na.rm = TRUE),
+    scieducm = mean(scieduc, na.rm = TRUE),
+    trust_indexm = mean(trust_index, na.rm = TRUE),
+    regionsm = ifelse(
+      grepl("Europe", regions),
+      "Europe",
+      ifelse(
+        grepl("Africa", regions),
+        "Africa",
+        ifelse(
+          grepl("Asia", regions),
+          "Asia",
+          ifelse(
+            grepl("Central America", regions),
+            "Central/South America",
+            ifelse(
+              grepl("South America", regions),
+              "Central/South America",
+              as.character(regions)
+            )
+          )
+        )
+      )
+    )
+  ) %>%
+  select(country,
+         scieducm,
+         trust_indexm,
+         elecdem,
+         elecdem_fct,
+         regions,
+         regionsm) %>%
+  distinct() %>%
+  arrange(desc(elecdem)) %>% 
+  mutate(
+    text = paste(
+      "Country: ",
+      country,
+      "\nRegion: ",
+      regions,
+      "\nElectoral Democracy Index: ",
+      elecdem,
+      "\nTrust in Scientists (mean): ",
+      round(trust_indexm,2),
+      "\nScience Education Level (mean): ",
+      round(scieducm,2),
+      sep = ""
+    )
+  )
+
+p2 <- dat20 %>%
+  filter(regions != "Not assigned") %>%
+  arrange(desc(elecdem)) %>% 
+  ggplot(aes(
+    x = scieducm,
+    y = trust_indexm,
+    size = desc(elecdem),
+    color = elecdem_fct
+  )) +
+  geom_point(aes(text=text), alpha = 0.6) +
+  scale_size(range = c(9, 0.1), name = "electoral democracy index") +
+  scale_color_viridis_d(
+    name = "",
+    option = "viridis",
+    begin = 0.01,
+    end = 0.75,
+    direction = -1,
+  ) +
+  theme_minimal() +
+  labs(title="How do trust level and science education vary by regime type in 2020?") +
+  theme(legend.position = "right") +
+  scale_y_continuous(name = "mean trust in scientists (restricted index)") +
+  scale_x_continuous(name = "mean level of science education")
+
+```
+
+## 2020 data
+
+```{r echo=FALSE, warning=FALSE, results='markup'}
+pp2 <- ggplotly(p2, tooltip = "text")
+pp2
+
+```
+
+
+
+
+
